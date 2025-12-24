@@ -13,7 +13,9 @@ export class ApiError extends Error {
     this.statusCode = statusCode;
     this.errors = errors;
 
-    const captureStackTrace = (Error as any).captureStackTrace;
+    const captureStackTrace =
+      (Error as unknown as { captureStackTrace?: (target: object, ctor?: Function) => void })
+        .captureStackTrace;
 
     if (typeof captureStackTrace === "function") {
       captureStackTrace(this, this.constructor);
