@@ -4,17 +4,16 @@
   "description": "Reusable middleware, validators, and error handlers for Node.js",
   "license": "MIT",
   "author": "Praveen Kumar",
-
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
-
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "require": "./dist/index.cjs",
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
@@ -24,15 +23,14 @@
     "lint:fix": "biome check --apply src",
     "prepare": "npm run build"
   },
-
   "dependencies": {
     "zod": "^4.2.1"
   },
-
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "vite": "^4.5.0",
+    "vitest": "^0.34.6"
   }
 }
