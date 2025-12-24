@@ -9,5 +9,5 @@ export type AsyncHandler<TReq = unknown, TRes = unknown> = (
 export const asyncHandler =
   <TReq, TRes>(handler: AsyncHandler<TReq, TRes>) =>
   (req: TReq, res: TRes, next: NextFn) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
+   return Promise.resolve(handler(req, res, next)).catch(next);
   };
