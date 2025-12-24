@@ -13,8 +13,10 @@ export class ApiError extends Error {
     this.statusCode = statusCode;
     this.errors = errors;
 
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
+    const captureStackTrace = (Error as any).captureStackTrace;
+
+    if (typeof captureStackTrace === "function") {
+      captureStackTrace(this, this.constructor);
     }
   }
 }
