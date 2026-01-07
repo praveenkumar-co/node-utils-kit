@@ -1,7 +1,20 @@
 {
   "name": "node-utils-kit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Reusable middleware, validators, and error handlers for Node.js",
+  "keywords": [
+    "nodejs",
+    "api",
+    "express",
+    "error-handler",
+    "error-handling",
+    "typescript",
+    "async-handler",
+    "middleware",
+    "api-response",
+    "http-error",
+    "backend"
+  ],
   "license": "MIT",
   "author": "Praveen Kumar",
   "main": "./dist/index.cjs",
