@@ -1,17 +1,14 @@
-import { AsyncLocalStorage} from "async_hooks" ;
+import { AsyncLocalStorage } from "node:async_hooks";
 
 export interface RequestContext {
-    requestId?: string;
-    userId?: string;
-    traceId?: string;
-    extras?: Record<string, unknown>;    
+  requestId?: string;
+  userId?: string;
+  traceId?: string;
+  extras?: Record<string, unknown>;
 }
 const storage = new AsyncLocalStorage();
 
-export function withContext<T>(
-  context: RequestContext, 
-  fn: () => T
-): T {
+export function withContext<T>(context: RequestContext, fn: () => T): T {
   return storage.run(context, fn);
 }
 
@@ -24,5 +21,4 @@ export function setContext(values: Partial<RequestContext>) {
   if (store) {
     Object.assign(store, values);
   }
-} 
-
+}
