@@ -89,12 +89,13 @@ import {
   setContext,
 } from "node-utils-kit";
 
- - Examples
+```Examples```
 
 ## Express
 
 1. Safe Async Handling (asyncHandler)
 
+```Javascript 
 import express from "express";
 import { asyncHandler, ApiError } from "node-utils-kit";
 
@@ -138,7 +139,7 @@ app.use((err, req, res, next) => {
 
 
  (Store and access request-scoped data without passing req everywhere.)
- 
+
 import { withContext } from "node-utils-kit";
 
 export const requestContextMiddleware = (req, res, next) => {
@@ -162,7 +163,7 @@ console.log(ctx.userId);
 console.log(ctx.extras);
 
 
- ## Nest JS 
+ ```NestJS`` 
 
 1. `request-context.middleware.ts`
 
@@ -213,6 +214,7 @@ export class UserController {
 }
 
  ## Fastify 
+ 
 1. app.js
 
 import Fastify from "fastify";
@@ -244,7 +246,8 @@ app.listen({ port: 3000 });
  
  ## Plain Node.js HTTP Server 
 
-1. server.jsimport http from "http";
+1. server.js
+import http from "http";
 
 import { withContext, getContext, ApiError } from "node-utils-kit";
 
