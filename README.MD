@@ -70,9 +70,10 @@ pnpm add node-utils-kit
 
  ## Usage
 
--> CommonJS
 
 ```bash
+
+-> CommonJS
 
 const { asyncHandler,
   ApiError,
@@ -95,15 +96,16 @@ import {
 } from "node-utils-kit";
 
 ```
+--- 
 
 ### Examples 
 
+```Javascript
 
-```Express```
+ ```Express```  
 
- 1.Safe Async Handling (asyncHandler)
+1. Safe Async Handling (asyncHandler)
 
-```Javascript 
 import express from "express";
 import { asyncHandler, ApiError } from "node-utils-kit";
 
@@ -121,7 +123,6 @@ app.get(
     res.json(user);
   })
 );
-
 app.listen(3000);
 
 2. Standard API Responses (ApiResponse)
@@ -131,7 +132,6 @@ import { ApiResponse } from "node-utils-kit";
 res.status(200).json(
   new ApiResponse(200, { id: 1, name: "Praveen" }, "Success")
 );
-
 
 3. Centralized Errors (ApiError + errorHandler)
 
