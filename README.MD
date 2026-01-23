@@ -94,6 +94,12 @@ import {
 ## Express
 
 1. Safe Async Handling (asyncHandler)
+
+import express from "express";
+import { asyncHandler, ApiError } from "node-utils-kit";
+
+const app = express();
+
 app.get(
   "/user",
   asyncHandler(async (req, res) => {
@@ -106,44 +112,62 @@ app.get(
     res.json(user);
   })
 );
-2. Standard API Responses (ApiResponse)
-app.get("/user", asyncHandler(async (req, res) => {
-  const user = null;
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-  res.json(user);
-}));
-3. Centralized Errors (ApiError + errorHandler)
-throw new ApiError(401, "Unauthorized");
 
-GlobalHandler : 
+app.listen(3000);
+
+2. Standard API Responses (ApiResponse)
+  
+import { ApiResponse } from "node-utils-kit";
+
+res.status(200).json(
+  new ApiResponse(200, { id: 1, name: "Praveen" }, "Success")
+);
+
+
+3. Centralized Errors (ApiError + errorHandler)
+
+ import { errorHandler } from "node-utils-kit";
+
 app.use((err, req, res, next) => {
   const result = errorHandler(err);
   res.status(result.statusCode).json(result.body);
 });
+
+
 4. Request Context (AsyncLocalStorage)
+
+
  (Store and access request-scoped data without passing req everywhere.)
- withContext(
-  {
-    requestId: "req-123",
-    userId: "42",
-    extras: { role: "admin" }
-  },
-  () => {
-    // your request logic
-  }
-);
- -- Read context anywhere  -- 
-const cts = getContext() ;
+ 
+import { withContext } from "node-utils-kit";
+
+export const requestContextMiddleware = (req, res, next) => {
+  withContext(
+    {
+      requestId: req.headers["x-request-id"] || `req-${Date.now()}`,
+      userId: req.headers["x-user-id"],
+      extras: { role: "admin" },
+    },
+    () => next()
+  );
+};
+
+ Read Context Anywhere
+
+import { getContext } from "node-utils-kit";
+
+const ctx = getContext();
 console.log(ctx.requestId);
 console.log(ctx.userId);
-console.log(ctx.extras); 
-// This may work accross : controllers , services , middlewares , utilities ,async functions, etc.
+console.log(ctx.extras);
 
-## Nest JS 
-1. request-context.middleware.ts
- import { Injectable, NestMiddleware } from "@nestjs/common";
+
+ ## Nest JS 
+
+1. `request-context.middleware.ts`
+
+```typescript
+import { Injectable, NestMiddleware } from "@nestjs/common";
 import { withContext } from "node-utils-kit";
 
 @Injectable()
@@ -158,7 +182,9 @@ export class RequestContextMiddleware implements NestMiddleware {
     );
   }
 }
+
 2. app.module.ts 
+
 import { Module, MiddlewareConsumer } from "@nestjs/common";
 import { RequestContextMiddleware } from "./request-context.middleware";
 import { UserController } from "./user.controller";
@@ -171,7 +197,9 @@ export class AppModule {
     consumer.apply(RequestContextMiddleware).forRoutes("*");
   }
 }
+
 3. user.controller.ts
+
 @Controller("user")
 export class UserController {
   @Get()
@@ -186,6 +214,7 @@ export class UserController {
 
  ## Fastify 
 1. app.js
+
 import Fastify from "fastify";
 import { withContext, getContext, ApiError } from "node-utils-kit";
 
@@ -212,10 +241,11 @@ app.get("/user", async (req, reply) => {
 });
 
 app.listen({ port: 3000 });
+ 
+ ## Plain Node.js HTTP Server 
 
-## Plain Node.js HTTP Server 
-1. server.js
-import http from "http";
+1. server.jsimport http from "http";
+
 import { withContext, getContext, ApiError } from "node-utils-kit";
 
 const server = http.createServer((req, res) => {
