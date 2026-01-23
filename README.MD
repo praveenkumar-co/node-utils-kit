@@ -13,6 +13,8 @@ It is written in TypeScript, published as ESM + CJS, and designed to work with E
 - Handling errors centrally
 - Passing request metadata (requestId, userId) across async layers
 
+---
+
 ## Features
 
 - Framework-agnostic design
@@ -22,6 +24,7 @@ It is written in TypeScript, published as ESM + CJS, and designed to work with E
 - Minimal surface area with zero-overhead utilities
 - Minimal API surface (easy to learn, hard to misuse)
 
+---
 
 ## The package provides the following exports:
 
@@ -69,6 +72,8 @@ pnpm add node-utils-kit
 
 -> CommonJS
 
+```bash
+
 const { asyncHandler,
   ApiError,
   ApiResponse,
@@ -89,11 +94,14 @@ import {
   setContext,
 } from "node-utils-kit";
 
-```Examples```
+```
 
-## Express
+### Examples 
 
-1. Safe Async Handling (asyncHandler)
+
+```Express```
+
+ 1.Safe Async Handling (asyncHandler)
 
 ```Javascript 
 import express from "express";
@@ -137,7 +145,6 @@ app.use((err, req, res, next) => {
 
 4. Request Context (AsyncLocalStorage)
 
-
  (Store and access request-scoped data without passing req everywhere.)
 
 import { withContext } from "node-utils-kit";
@@ -156,18 +163,17 @@ export const requestContextMiddleware = (req, res, next) => {
  Read Context Anywhere
 
 import { getContext } from "node-utils-kit";
-
 const ctx = getContext();
 console.log(ctx.requestId);
 console.log(ctx.userId);
 console.log(ctx.extras);
 
+---
 
- ```NestJS`` 
+ ```NestJS```
 
-1. `request-context.middleware.ts`
+1. ```request-context.middleware.ts```
 
-```typescript
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { withContext } from "node-utils-kit";
 
@@ -201,7 +207,7 @@ export class AppModule {
 
 3. user.controller.ts
 
-@Controller("user")
+@Controller("user") 
 export class UserController {
   @Get()
   async getUser() {
@@ -212,9 +218,10 @@ export class UserController {
     return "User";
   }
 }
+---
 
- ## Fastify 
- 
+ ```Fastify``` 
+
 1. app.js
 
 import Fastify from "fastify";
@@ -244,7 +251,9 @@ app.get("/user", async (req, reply) => {
 
 app.listen({ port: 3000 });
  
- ## Plain Node.js HTTP Server 
+---
+
+```Plain Node.js HTTP Server``` 
 
 1. server.js
 import http from "http";
