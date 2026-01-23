@@ -278,6 +278,19 @@ server.listen(3000, () => {
 });
 
 ```
+---
+
+ ## 🤝 Contributing
+
+This project is a labor of love! Whether you're fixing a bug, adding a framework example, or improving docs, your help is welcome. 
+
+1. Fork the repo.
+2. Create your feature branch.
+3. Open a Pull Request!
+
+Check the **Issues** tab for "good first issues" to get started!
+
+---
 ## License
 
 MIT License
