@@ -1,8 +1,17 @@
-# node-utils-kit
+## node-utils-kit
 
-`node-utils-kit` is a lightweight, framework-agnostic utility toolkit for building Node.js APIs with clean error handling and predictable responses. It is fully written in TypeScript and works seamlessly with Express, Fastify, NestJS, and custom HTTP servers.
+node-utils-kit is a lightweight, framework-agnostic utility toolkit for building Node.js APIs with clean error handling, safe async flows, predictable responses, and request-scoped context.
+
+It is written in TypeScript, published as ESM + CJS, and designed to work with Express, Fastify, NestJS, or plain Node.js.
 
 ---
+
+## Why This Package Exist 
+
+- Wrapping async routes safely
+- Creating consistent API responses
+- Handling errors centrally
+- Passing request metadata (requestId, userId) across async layers
 
 ## Features
 
@@ -11,13 +20,24 @@
 - Predictable and consistent API responses
 - Centralized and safe async error handling
 - Minimal surface area with zero-overhead utilities
+- Minimal API surface (easy to learn, hard to misuse)
 
-The package provides the following exports:
 
-- ApiError  
-- ApiResponse  
-- asyncHandler  
-- errorHandler  
+## The package provides the following exports:
+
+- ApiError
+
+- ApiResponse
+
+- asyncHandler
+
+- errorHandler
+
+- withContext
+
+- getContext
+
+- setContext
 
 ---
 
@@ -45,142 +65,181 @@ or
 pnpm add node-utils-kit
 ```
 
-## Usage
+ ## Usage
 
-### CommonJS
-const { asyncHandler, ApiError, errorHandler } = require("node-utils-kit");
+-> CommonJS
 
-### ES Modules / TypeScript
-import { asyncHandler, ApiError, errorHandler, ApiResponse } from "node-utils-kit";
+const { asyncHandler,
+  ApiError,
+  ApiResponse,
+  errorHandler,
+  withContext,
+  getContext,
+  setContext } = require("node-utils-kit");
 
-## Examples
+-> ES Modules / TypeScript
 
-### Express
+import {
+  asyncHandler,
+  ApiError,
+  ApiResponse,
+  errorHandler,
+  withContext,
+  getContext,
+  setContext,
+} from "node-utils-kit";
 
-```javascript
-const express = require("express");
-const { asyncHandler, ApiError, errorHandler } = require("node-utils-kit");
+ - Examples
 
-const app = express();
+## Express
 
-app.get("/user", asyncHandler(async (req, res) => {
+1. Safe Async Handling (asyncHandler)
+app.get(
+  "/user",
+  asyncHandler(async (req, res) => {
     const user = null;
+
     if (!user) {
-        throw new ApiError(404, "User Not Found");
+      throw new ApiError(404, "User not found");
     }
+
     res.json(user);
+  })
+);
+2. Standard API Responses (ApiResponse)
+app.get("/user", asyncHandler(async (req, res) => {
+  const user = null;
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+  res.json(user);
 }));
+3. Centralized Errors (ApiError + errorHandler)
+throw new ApiError(401, "Unauthorized");
 
-app.use(errorHandler);
-
-app.listen(3000, () => {
-    console.log("Server started on port 3000");
+GlobalHandler : 
+app.use((err, req, res, next) => {
+  const result = errorHandler(err);
+  res.status(result.statusCode).json(result.body);
 });
-```
+4. Request Context (AsyncLocalStorage)
+ (Store and access request-scoped data without passing req everywhere.)
+ withContext(
+  {
+    requestId: "req-123",
+    userId: "42",
+    extras: { role: "admin" }
+  },
+  () => {
+    // your request logic
+  }
+);
+ -- Read context anywhere  -- 
+const cts = getContext() ;
+console.log(ctx.requestId);
+console.log(ctx.userId);
+console.log(ctx.extras); 
+// This may work accross : controllers , services , middlewares , utilities ,async functions, etc.
 
-### Fastify
+## Nest JS 
+1. request-context.middleware.ts
+ import { Injectable, NestMiddleware } from "@nestjs/common";
+import { withContext } from "node-utils-kit";
 
-```javascript
-const fastify = require("fastify");
-const { asyncHandler, ApiError, errorHandler } = require("node-utils-kit");
+@Injectable()
+export class RequestContextMiddleware implements NestMiddleware {
+  use(req: any, res: any, next: () => void) {
+    withContext(
+      {
+        requestId: req.headers["x-request-id"] || `req-${Date.now()}`,
+        userId: req.user?.id,
+      },
+      () => next()
+    );
+  }
+}
+2. app.module.ts 
+import { Module, MiddlewareConsumer } from "@nestjs/common";
+import { RequestContextMiddleware } from "./request-context.middleware";
+import { UserController } from "./user.controller";
 
-const app = fastify();
-
-app.get("/user", asyncHandler(async (req, reply) => {
-    const user = null;
-    if (!user) {
-        throw new ApiError(404, "User Not Found");
-    }
-    reply.send(user);
-}));
-
-app.setErrorHandler(errorHandler);
-
-app.listen(3000, () => {
-    console.log("Server started on port 3000");
-});
-```
-
-### NestJS
-
-```typescript
-import { Controller, Get, UseInterceptors } from "@nestjs/common";
-import { asyncHandler, ApiError, errorHandler } from "node-utils-kit";
-
+@Module({
+  controllers: [UserController],
+})
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestContextMiddleware).forRoutes("*");
+  }
+}
+3. user.controller.ts
 @Controller("user")
 export class UserController {
-    @Get()
-    @UseInterceptors(errorHandler)
-    async getUser() {
-        const user = null;
-        if (!user) {
-            throw new ApiError(404, "User Not Found");
-        }
-        return user;
-    }
+  @Get()
+  async getUser() {
+    const ctx = getContext();
+    console.log(ctx.requestId);
+    console.log(ctx.userId);
+    console.log(ctx.extras);
+    return "User";
+  }
 }
-```
 
-### Custom Node.js HTTP Server
+ ## Fastify 
+1. app.js
+import Fastify from "fastify";
+import { withContext, getContext, ApiError } from "node-utils-kit";
 
-```javascript
-const http = require("http");
-const { asyncHandler, ApiError, errorHandler } = require("node-utils-kit");
+const app = Fastify();
 
-const server = http.createServer(asyncHandler(async (req, res) => {
-    const user = null;
-    if (!user) {
-        throw new ApiError(404, "User Not Found");
+app.addHook("onRequest", (req, reply, done) => {
+  withContext(
+    {
+      requestId: req.headers["x-request-id"] || `req-${Date.now()}`,
+    },
+    () => done()
+  );
+});
+
+app.get("/user", async (req, reply) => {
+  const ctx = getContext();
+  console.log("Request ID:", ctx.requestId);
+
+  if (!ctx.requestId) {
+    throw new ApiError(400, "Missing request context");
+  }
+
+  reply.send({ success: true, id: 1 });
+});
+
+app.listen({ port: 3000 });
+
+## Plain Node.js HTTP Server 
+1. server.js
+import http from "http";
+import { withContext, getContext, ApiError } from "node-utils-kit";
+
+const server = http.createServer((req, res) => {
+  withContext(
+    {
+      requestId: req.headers["x-request-id"] || `req-${Date.now()}`,
+    },
+    async () => {
+      const ctx = getContext();
+      console.log("Request ID:", ctx.requestId);
+
+      if (req.url === "/user") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, id: 1 }));
+        return;
+      }
+      throw new ApiError(404, "Route not found");
     }
-    res.end(JSON.stringify(user));
-}));
-
-server.on("error", errorHandler);
+  );
+});
 
 server.listen(3000, () => {
-    console.log("Server started on port 3000");
+  console.log("Server running on port 3000");
 });
-```
-
-## API
-
-### ApiResponse
-
-```typescript
-const response = new ApiResponse(200, { message: "success" });
-```
-
-### ApiError
-
-```typescript
-const error = new ApiError(400, "Bad Request");
-```
-
-### errorHandler
-
-```typescript
-const errorHandler = require("node-utils-kit").errorHandler;
-``` 
-
-## Examples
-
-```javascript
-import {ApiError , AsyncHandler} from "node-utils-kit"; 
-app.get("/user",AsyncHandler(async(req,res)=>{
-    const user = null ;
-    if(!user){
-      throw new ApiError(404,"User Not Found");
-    } 
-    res.json(user);
-}))
-import {errorHandler} from "node-utils-kit";
-
-try{
-   throw new ApiError(401,"Unauthorized");
-}catch(error){
-    errorHandler(error , req , res , next);
-}
-```
 
 ## License
 
