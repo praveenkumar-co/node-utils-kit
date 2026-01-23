@@ -142,7 +142,6 @@ app.use((err, req, res, next) => {
   res.status(result.statusCode).json(result.body);
 });
 
-
 4. Request Context (AsyncLocalStorage)
 
  (Store and access request-scoped data without passing req everywhere.)
@@ -167,8 +166,6 @@ const ctx = getContext();
 console.log(ctx.requestId);
 console.log(ctx.userId);
 console.log(ctx.extras);
-
----
 
  ---------------------------------NestJS---------------------------------
 
@@ -218,7 +215,6 @@ export class UserController {
     return "User";
   }
 }
----
 
  ---------------------------------Fastify---------------------------------
 
@@ -251,8 +247,6 @@ app.get("/user", async (req, reply) => {
 
 app.listen({ port: 3000 });
  
----
-
  ---------------------------------Plain Node.js HTTP Server---------------------------------
 
 1. server.js
