@@ -1,17 +1,17 @@
-## node-utils-kit
+# node-utils-kit
 
-node-utils-kit is a lightweight, framework-agnostic utility toolkit for building Node.js APIs with clean error handling, safe async flows, predictable responses, and request-scoped context.
+node-utils-kit is a lightweight, framework-agnostic utility toolkit for building Node.js APIs with clean error handling, safe async flows, and fully customizable response formats.
 
 It is written in TypeScript, published as ESM + CJS, and designed to work with Express, Fastify, NestJS, or plain Node.js.
 
 ---
 
-## Why This Package Exist 
+## Why This Package Exists
 
 - Wrapping async routes safely
-- Creating consistent API responses
+- Creating consistent API responses in any format your team defines
 - Handling errors centrally
-- Passing request metadata (requestId, userId) across async layers
+- Adapting response and error shapes without rewriting your entire codebase
 
 ---
 
@@ -19,28 +19,19 @@ It is written in TypeScript, published as ESM + CJS, and designed to work with E
 
 - Framework-agnostic design
 - First-class TypeScript support
-- Predictable and consistent API responses
+- Fully customizable response and error formats via global formatter
 - Centralized and safe async error handling
-- Minimal surface area with zero-overhead utilities
+- Minimal surface area with zero runtime dependencies
 - Minimal API surface (easy to learn, hard to misuse)
 
 ---
 
 ## The package provides the following exports:
 
-- ApiError
-
-- ApiResponse
-
-- asyncHandler
-
-- errorHandler
-
-- withContext
-
-- getContext
-
-- setContext
+- `ApiError`
+- `ApiResponse`
+- `asyncHandler`
+- `errorHandler`
 
 ---
 
@@ -48,10 +39,10 @@ It is written in TypeScript, published as ESM + CJS, and designed to work with E
 
 This package does not depend on any specific web framework. It supports:
 
-- Express  
-- Fastify  
-- NestJS  
-- Custom Node.js HTTP applications  
+- Express
+- Fastify
+- NestJS
+- Custom Node.js HTTP applications
 
 ---
 
@@ -60,52 +51,82 @@ This package does not depend on any specific web framework. It supports:
 ```bash
 npm install node-utils-kit
 
-or 
+# or
 
 yarn add node-utils-kit
 
-or 
+# or
+
 pnpm add node-utils-kit
 ```
 
- ## Usage
+---
 
+## Usage
 
 ```bash
-
 -> CommonJS
 
-const { asyncHandler,
-  ApiError,
-  ApiResponse,
-  errorHandler,
-  withContext,
-  getContext,
-  setContext } = require("node-utils-kit");
+const { asyncHandler, ApiError, ApiResponse, errorHandler } = require("node-utils-kit");
 
 -> ES Modules / TypeScript
 
-import {
-  asyncHandler,
-  ApiError,
-  ApiResponse,
-  errorHandler,
-  withContext,
-  getContext,
-  setContext,
-} from "node-utils-kit";
-
+import { asyncHandler, ApiError, ApiResponse, errorHandler } from "node-utils-kit";
 ```
---- 
 
-### Examples 
+---
 
-```Javascript
+## Custom Response Format (Global Formatter)
 
- ---------------------------------Express---------------------------------
+By default, `ApiResponse` outputs:
 
-1. Safe Async Handling (asyncHandler)
+```json
+{ "statusCode": 200, "data": {}, "message": "Success", "success": true }
+```
 
+If your team uses a different API contract, register a global formatter **once** at app startup. Every `ApiResponse` and `ApiError` instance across your entire codebase will automatically use it — no other changes required.
+
+```typescript
+import { ApiResponse, ApiError } from "node-utils-kit";
+
+// Register once in app.ts or server.ts
+ApiResponse.setFormatter((statusCode, data, message, success) => ({
+  code: statusCode,
+  payload: data,
+  ok: success,
+  msg: message,
+}));
+
+ApiError.setFormatter((statusCode, message, errors) => ({
+  code: statusCode,
+  error: message,
+  details: errors,
+  ok: false,
+}));
+```
+
+Output of every `new ApiResponse(200, data, "Fetched")` thereafter:
+
+```json
+{ "code": 200, "payload": {}, "ok": true, "msg": "Fetched" }
+```
+
+To reset to the default format (useful in tests):
+
+```typescript
+ApiResponse.resetFormatter();
+ApiError.resetFormatter();
+```
+
+---
+
+## Examples
+
+### Express
+
+#### 1. Safe Async Handling (asyncHandler)
+
+```typescript
 import express from "express";
 import { asyncHandler, ApiError } from "node-utils-kit";
 
@@ -123,166 +144,121 @@ app.get(
     res.json(user);
   })
 );
-app.listen(3000);
 
-2. Standard API Responses (ApiResponse)
-  
+app.listen(3000);
+```
+
+#### 2. Standard API Responses (ApiResponse)
+
+```typescript
 import { ApiResponse } from "node-utils-kit";
 
 res.status(200).json(
   new ApiResponse(200, { id: 1, name: "Praveen" }, "Success")
 );
+```
 
-3. Centralized Errors (ApiError + errorHandler)
+#### 3. Centralized Errors (ApiError + errorHandler)
 
- import { errorHandler } from "node-utils-kit";
+```typescript
+import { errorHandler } from "node-utils-kit";
 
 app.use((err, req, res, next) => {
   const result = errorHandler(err);
   res.status(result.statusCode).json(result.body);
 });
+```
 
-4. Request Context (AsyncLocalStorage)
+---
 
- (Store and access request-scoped data without passing req everywhere.)
+### NestJS
 
-import { withContext } from "node-utils-kit";
+#### 1. `exception.filter.ts`
 
-export const requestContextMiddleware = (req, res, next) => {
-  withContext(
-    {
-      requestId: req.headers["x-request-id"] || `req-${Date.now()}`,
-      userId: req.headers["x-user-id"],
-      extras: { role: "admin" },
-    },
-    () => next()
-  );
-};
+```typescript
+import { ExceptionFilter, Catch, ArgumentsHost } from "@nestjs/common";
+import { ApiError, errorHandler } from "node-utils-kit";
 
- Read Context Anywhere
-
-import { getContext } from "node-utils-kit";
-const ctx = getContext();
-console.log(ctx.requestId);
-console.log(ctx.userId);
-console.log(ctx.extras);
-
- ---------------------------------NestJS---------------------------------
-
-1. ```request-context.middleware.ts```
-
-import { Injectable, NestMiddleware } from "@nestjs/common";
-import { withContext } from "node-utils-kit";
-
-@Injectable()
-export class RequestContextMiddleware implements NestMiddleware {
-  use(req: any, res: any, next: () => void) {
-    withContext(
-      {
-        requestId: req.headers["x-request-id"] || `req-${Date.now()}`,
-        userId: req.user?.id,
-      },
-      () => next()
-    );
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+    const result = errorHandler(exception);
+    response.status(result.statusCode).json(result.body);
   }
 }
+```
 
-2. app.module.ts 
+#### 2. `user.controller.ts`
 
-import { Module, MiddlewareConsumer } from "@nestjs/common";
-import { RequestContextMiddleware } from "./request-context.middleware";
-import { UserController } from "./user.controller";
+```typescript
+import { Controller, Get } from "@nestjs/common";
+import { ApiResponse } from "node-utils-kit";
 
-@Module({
-  controllers: [UserController],
-})
-export class AppModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestContextMiddleware).forRoutes("*");
-  }
-}
-
-3. user.controller.ts
-
-@Controller("user") 
+@Controller("user")
 export class UserController {
   @Get()
   async getUser() {
-    const ctx = getContext();
-    console.log(ctx.requestId);
-    console.log(ctx.userId);
-    console.log(ctx.extras);
-    return "User";
+    return new ApiResponse(200, { id: 1, name: "Praveen" }, "Fetched");
   }
 }
+```
 
- ---------------------------------Fastify---------------------------------
+---
 
-1. app.js
+### Fastify
 
+```typescript
 import Fastify from "fastify";
-import { withContext, getContext, ApiError } from "node-utils-kit";
+import { ApiError, ApiResponse } from "node-utils-kit";
 
 const app = Fastify();
 
-app.addHook("onRequest", (req, reply, done) => {
-  withContext(
-    {
-      requestId: req.headers["x-request-id"] || `req-${Date.now()}`,
-    },
-    () => done()
-  );
-});
-
 app.get("/user", async (req, reply) => {
-  const ctx = getContext();
-  console.log("Request ID:", ctx.requestId);
+  const user = null;
 
-  if (!ctx.requestId) {
-    throw new ApiError(400, "Missing request context");
+  if (!user) {
+    throw new ApiError(404, "User not found");
   }
 
-  reply.send({ success: true, id: 1 });
+  reply.send(new ApiResponse(200, { id: 1 }, "Fetched"));
 });
 
 app.listen({ port: 3000 });
- 
- ---------------------------------Plain Node.js HTTP Server---------------------------------
+```
 
-1. server.js
+---
+
+### Plain Node.js HTTP Server
+
+```typescript
 import http from "http";
-
-import { withContext, getContext, ApiError } from "node-utils-kit";
+import { ApiError, ApiResponse } from "node-utils-kit";
 
 const server = http.createServer((req, res) => {
-  withContext(
-    {
-      requestId: req.headers["x-request-id"] || `req-${Date.now()}`,
-    },
-    async () => {
-      const ctx = getContext();
-      console.log("Request ID:", ctx.requestId);
+  if (req.url === "/user") {
+    const response = new ApiResponse(200, { id: 1 }, "Fetched");
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(response));
+    return;
+  }
 
-      if (req.url === "/user") {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, id: 1 }));
-        return;
-      }
-      throw new ApiError(404, "Route not found");
-    }
-  );
+  const error = new ApiError(404, "Route not found");
+  res.writeHead(404, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(error));
 });
 
 server.listen(3000, () => {
   console.log("Server running on port 3000");
 });
-
 ```
+
 ---
 
- ## 🤝 Contributing
+## Contributing
 
-This project is a labor of love! Whether you're fixing a bug, adding a framework example, or improving docs, your help is welcome. 
+This project is a labor of love! Whether you're fixing a bug, adding a framework example, or improving docs, your help is welcome.
 
 1. Fork the repo.
 2. Create your feature branch.
@@ -291,6 +267,7 @@ This project is a labor of love! Whether you're fixing a bug, adding a framework
 Check the **Issues** tab for "good first issues" to get started!
 
 ---
+
 ## License
 
 MIT License
