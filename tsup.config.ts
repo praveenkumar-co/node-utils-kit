@@ -11,5 +11,9 @@ export default defineConfig({
   outDir: "dist",
   target: "es2020",
   platform: "node",
-  external: ["zod"]
+  outExtension({ format }) {
+    return {
+      js: format === "cjs" ? ".cjs" : ".js",
+    };
+  },
 });
