@@ -1,6 +1,6 @@
 {
   "name": "node-utils-kit",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Reusable middleware, validators, and error handlers for Node.js",
   "keywords": [
     "nodejs",
@@ -36,7 +36,7 @@
     "lint:fix": "biome check --write src",
     "prepare": "npm run build"
   },
- "dependencies": {},
+  "dependencies": {},
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
     "tsup": "^8.5.1",
