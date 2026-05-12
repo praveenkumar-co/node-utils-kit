@@ -3,12 +3,8 @@ import { ApiError } from "../utils/ApiError";
 export const errorHandler = (err: unknown) => {
   if (err instanceof ApiError) {
     return {
-      statusCode: err.statusCode,
-      body: {
-        success: false,
-        message: err.message,
-        errors: err.errors,
-      },
+      statusCode : err.statusCode,
+        body : err.toJSON(),
     };
   }
 

@@ -1,17 +1,41 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { errorHandler } from "../src/middlewares/errorHandler";
 import { ApiError } from "../src/utils/ApiError";
 
-describe("errorHandler", () => {
-  it("should handle ApiError correctly", () => {
-    const err = new ApiError(401, "Unauthorized", ["token"]);
+afterEach(() => {
+  ApiError.resetFormatter();
+});
 
+describe("errorHandler", () => {
+  it("should handle ApiError correctly with default formatter", () => {
+    const err = new ApiError(401, "Unauthorized", ["token"]);
     const result = errorHandler(err);
 
     expect(result.statusCode).toBe(401);
-    expect(result.body.success).toBe(false);
-    expect(result.body.message).toBe("Unauthorized");
-    expect(result.body.errors).toEqual(["token"]);
+    expect(result.body).toEqual({
+      statusCode: 401,
+      message: "Unauthorized",
+      errors: ["token"],
+      success: false,
+    });
+  });
+
+  it("should handle ApiError correctly with custom formatter", () => {
+    ApiError.setFormatter((statusCode, message, errors) => ({
+      code: statusCode,
+      error: message,
+      details: errors,
+    }));
+
+    const err = new ApiError(403, "Forbidden", ["insufficient permissions"]);
+    const result = errorHandler(err);
+
+    expect(result.statusCode).toBe(403);
+    expect(result.body).toEqual({
+      code: 403,
+      error: "Forbidden",
+      details: ["insufficient permissions"],
+    });
   });
 
   it("should handle unknown errors with 500", () => {
