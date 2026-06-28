@@ -65,7 +65,11 @@ describe("ApiResponse — custom formatter", () => {
     const second = new ApiResponse(201, "data-b", "Created").toJSON();
 
     expect(first).toMatchObject({ status: 200, result: "data-a", msg: "OK" });
-    expect(second).toMatchObject({ status: 201, result: "data-b", msg: "Created" });
+    expect(second).toMatchObject({
+      status: 201,
+      result: "data-b",
+      msg: "Created",
+    });
   });
 
   it("resetFormatter should restore the default shape", () => {

@@ -5,7 +5,12 @@ export type ApiResponseFormatter<T = unknown> = (
   success: boolean,
 ) => Record<string, unknown>;
 
-const defaultFormatter: ApiResponseFormatter = (statusCode, data, message, success) => ({
+const defaultFormatter: ApiResponseFormatter = (
+  statusCode,
+  data,
+  message,
+  success,
+) => ({
   statusCode,
   data,
   message,
@@ -36,6 +41,11 @@ export class ApiResponse<T = unknown> {
   }
 
   toJSON(): Record<string, unknown> {
-    return ApiResponse._formatter(this.statusCode, this.data, this.message, this.success);
+    return ApiResponse._formatter(
+      this.statusCode,
+      this.data,
+      this.message,
+      this.success,
+    );
   }
 }

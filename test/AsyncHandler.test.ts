@@ -9,7 +9,7 @@ describe("asyncHandler", () => {
 
     const next = vi.fn();
 
-    await wrapped({}, {}, next); 
+    await wrapped({}, {}, next);
 
     expect(handler).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();

@@ -5,7 +5,12 @@ export type ApiErrorFormatter = (
   success: false,
 ) => Record<string, unknown>;
 
-const defaultFormatter: ApiErrorFormatter = (statusCode, message, errors, success) => ({
+const defaultFormatter: ApiErrorFormatter = (
+  statusCode,
+  message,
+  errors,
+  success,
+) => ({
   statusCode,
   message,
   errors,
@@ -30,12 +35,18 @@ export class ApiError extends Error {
 
     const captureStackTrace = (
       Error as unknown as {
-        captureStackTrace?: (target: object, ctor?: new (...args: never[]) => unknown) => void;
+        captureStackTrace?: (
+          target: object,
+          ctor?: new (...args: never[]) => unknown,
+        ) => void;
       }
     ).captureStackTrace;
 
     if (typeof captureStackTrace === "function") {
-      captureStackTrace(this, this.constructor as new (...args: never[]) => unknown);
+      captureStackTrace(
+        this,
+        this.constructor as new (...args: never[]) => unknown,
+      );
     }
   }
   static setFormatter(formatter: ApiErrorFormatter): void {
@@ -47,6 +58,11 @@ export class ApiError extends Error {
   }
 
   toJSON(): Record<string, unknown> {
-    return ApiError._formatter(this.statusCode, this.message, this.errors, false);
+    return ApiError._formatter(
+      this.statusCode,
+      this.message,
+      this.errors,
+      false,
+    );
   }
 }
