@@ -29,7 +29,6 @@ export class ApiError extends Error {
     this.statusCode = statusCode;
     this.errors = errors;
 
-
     const captureStackTrace = (
       Error as unknown as {
         captureStackTrace?: (target: object, ctor?: new (...args: never[]) => unknown) => void;
@@ -37,7 +36,6 @@ export class ApiError extends Error {
     ).captureStackTrace;
 
     if (typeof captureStackTrace === "function") {
-
       captureStackTrace(this, this.constructor as new (...args: never[]) => unknown);
     }
   }
@@ -51,7 +49,6 @@ export class ApiError extends Error {
   }
 
   toJSON(): Record<string, unknown> {
-    
     return ApiError._formatter(this.statusCode, this.message, this.errors, false);
   }
 }
